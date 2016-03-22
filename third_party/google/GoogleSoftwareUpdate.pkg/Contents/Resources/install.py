@@ -64,7 +64,7 @@ class Error(Exception):
     self.msg = msg
 
   def __str__(self):
-    return 'Package: %s, Root: %s, Error: %s' % (self.package, self.root,
+    return 'Package: {0!s}, Root: {1!s}, Error: {2!s}'.format(self.package, self.root,
                                                  self.msg)
 
 
@@ -75,8 +75,7 @@ def CheckOnePath(file, statmode):
     st = os.stat(file)
     if (st.st_mode & statmode) != 0:
       return
-  raise Error('None', 'None', 'Path check failure for "%s" mode %s' %
-              (file, statmode))
+  raise Error('None', 'None', 'Path check failure for "{0!s}" mode {1!s}'.format(file, statmode))
 
 
 # -------------------------------------------------------------------------
@@ -256,7 +255,7 @@ class KeystoneInstall(object):
     (result, out, errout) = self.RunCommand(cmd)
     if result != 0:
       raise Error(self.package, self.root,
-                  'Unable to read installed CFBundleVersion: "%s"' % errout)
+                  'Unable to read installed CFBundleVersion: "{0!s}"'.format(errout))
     return out.strip()
 
   def MyKeystoneBundleVersion(self):
@@ -272,7 +271,7 @@ class KeystoneInstall(object):
       (result, out, errout) = self.RunCommand(cmd)
       if result != 0:
         raise Error(self.package, self.root,
-                    'Unable to read package Info.plist: "%s"' % errout)
+                    'Unable to read package Info.plist: "{0!s}"'.format(errout))
       # walking by index instead of implicit iterator so we can easily
       # "get next"
       linelist = out.splitlines()
@@ -347,8 +346,7 @@ class KeystoneInstall(object):
       pf.close()
     except IOError, e:
       raise Error(self.package, self.root,
-                  'Failed to read resource launchd plist "%s": %s' %
-                  (plist, str(e)))
+                  'Failed to read resource launchd plist "{0!s}": {1!s}'.format(plist, str(e)))
     # This line is key.  We can't have a tilde in a launchd script;
     # we need an absolute path.  So we replace a known token, like this:
     #    cat src.plist | 's/INSTALL_ROOT/self.root/g' > dest.plist
@@ -372,8 +370,7 @@ class KeystoneInstall(object):
       os.rename(target_tmp_file, target_file)
     except IOError, e:
       raise Error(self.package, self.root,
-                  'Failed to install launchd plist "%s": %s' %
-                  (os.path.join(dest_dir, plist), str(e)))
+                  'Failed to install launchd plist "{0!s}": {1!s}'.format(os.path.join(dest_dir, plist), str(e)))
 
   def _InstallAgentLoginItem(self):
     """Setup the agent login item (vs. launchd job).
@@ -429,8 +426,7 @@ class KeystoneInstall(object):
           os.path.join(self._LaunchDaemonConfigDir(),
                        self._DaemonPlistFileName())])
       if not ignore_failure and result != 0:
-        raise Error(self.package, self.root, 'Failed to %s daemon (%d): %s' %
-                    (action, result, errout))
+        raise Error(self.package, self.root, 'Failed to {0!s} daemon ({1:d}): {2!s}'.format(action, result, errout))
     finally:
       self._ClearSystemInstallPermissions()
 
@@ -451,7 +447,7 @@ class KeystoneInstall(object):
         (result, psout, pserr) = self.RunCommand(['/bin/ps', 'auxwww'])
         if result != 0:  # Internal problem so don't use ignore_failure
           raise Error(self.package, self.root,
-                      'Could not run /bin/ps: %s' % pserr)
+                      'Could not run /bin/ps: {0!s}'.format(pserr))
         for psline in psout.splitlines():
           if psline.find(search_process_name) != -1:
             username = psline.split()[0]
@@ -466,7 +462,7 @@ class KeystoneInstall(object):
             (result, out, errout) = self.RunCommand([
                 '/bin/launchctl', 'bsexec', psline.split()[1],
                 '/usr/bin/sudo', '-u', username, '/bin/bash', '-c',
-                'unset SUDO_COMMAND ; /bin/launchctl %s -S Aqua "%s"' % (
+                'unset SUDO_COMMAND ; /bin/launchctl {0!s} -S Aqua "{1!s}"'.format(
                     action,
                     os.path.join(self._LaunchAgentConfigDir(),
                                  self._AgentPlistFileName()))])
@@ -474,8 +470,7 @@ class KeystoneInstall(object):
             # user as an error
             if not ignore_failure and result != 0 and uid == self.agent_job_uid:
               raise Error(self.package, self.root,
-                  'Failed to %s agent for uid %d from plist "%s" (%d): %s' %
-                  (action, self.agent_job_uid, agent_plist_path, result,
+                  'Failed to {0!s} agent for uid {1:d} from plist "{2!s}" ({3:d}): {4!s}'.format(action, self.agent_job_uid, agent_plist_path, result,
                    errout))
       finally:
         self._ClearSystemInstallPermissions()
@@ -487,8 +482,7 @@ class KeystoneInstall(object):
                                                '-S', 'Aqua', agent_plist_path])
       if not ignore_failure and result != 0:
         raise Error(self.package, self.root,
-                    'Failed to %s agent from plist "%s" (%d): %s' %
-                    (action, agent_plist_path, result, errout))
+                    'Failed to {0!s} agent from plist "{1!s}" ({2:d}): {3!s}'.format(action, agent_plist_path, result, errout))
 
   def _ClearQuarantine(self, path):
     """Remove LaunchServices quarantine attributes from a file hierarchy."""
@@ -561,7 +555,7 @@ class KeystoneInstall(object):
             os.rename(saved_bundle_path, self._KeystoneBundlePath())
         finally:
           raise Error(self.package, self.root,
-                      'Unable to unpack package: "%s"' % errout)
+                      'Unable to unpack package: "{0!s}"'.format(errout))
       if os.path.exists(saved_bundle_path):
         shutil.rmtree(saved_bundle_path)
       # Clear quarantine on the new bundle. Failure is ignored, user will
@@ -604,7 +598,7 @@ class KeystoneInstall(object):
       (result, out, errout) = self.RunCommand(cmd)
       if result != 0:
         raise Error(self.package, self.root,
-            'Keystone ticket install failed (%d): %s' % (result, errout))
+            'Keystone ticket install failed ({0:d}): {1!s}'.format(result, errout))
       # launchd config if requested
       if self.launchd_setup:
         # Daemon first (safer if upgrade fails)
@@ -666,7 +660,7 @@ class KeystoneInstall(object):
       (result, out, errout) = self.RunCommand(cmd)
       if result != 0:
         raise Error(self.package, self.root,
-            'Keystone ticket install failed (%d): %s' % (result, errout))
+            'Keystone ticket install failed ({0:d}): {1!s}'.format(result, errout))
     finally:
       if self.is_system:
         self._ClearSystemInstallPermissions()
@@ -713,7 +707,7 @@ class KeystoneInstall(object):
         (result, out, errout) = self.RunCommand(cmd)
         if result != 0 and errout.find('No ticket to delete') == -1:
           raise Error(self.package, self.root,
-              'Keystone ticket uninstall failed (%d): %s' % (result, errout))
+              'Keystone ticket uninstall failed ({0:d}): {1!s}'.format(result, errout))
       # Remove the Keystone bundle
       if os.path.exists(self._KeystoneBundlePath()):
         shutil.rmtree(self._KeystoneBundlePath())
@@ -911,7 +905,7 @@ class KeystoneInstallTiger(KeystoneInstall):
     (result, out, errout) = self.RunCommand(
         ['/usr/bin/defaults', 'write', domain,
          'AutoLaunchedApplicationDictionary', '-array-add',
-         '{Hide = 1; Path = "%s"; }' % self._KeystoneAgentPath()])
+         '{{Hide = 1; Path = "{0!s}"; }}'.format(self._KeystoneAgentPath())])
     if result == 0:
       return
     # An empty AutoLaunchedApplicationDictionary is an empty string,
@@ -922,11 +916,10 @@ class KeystoneInstallTiger(KeystoneInstall):
     (result, out, errout) = self.RunCommand(
         ['/usr/bin/defaults', 'write', domain,
          'AutoLaunchedApplicationDictionary', '-array',
-         '{Hide = 1; Path = "%s"; }' % self._KeystoneAgentPath()])
+         '{{Hide = 1; Path = "{0!s}"; }}'.format(self._KeystoneAgentPath())])
     if result != 0:
       raise Error(self.package, self.root,
-                  'Keystone agent login item in domain "%s" failed (%d): %s' %
-                  (domain, result, errout))
+                  'Keystone agent login item in domain "{0!s}" failed ({1:d}): {2!s}'.format(domain, result, errout))
 
   def _ChangeAgentRunStatus(self, start, ignore_failure):
     """Start the agent as a normal (non-launchd) process on Tiger."""
@@ -945,15 +938,13 @@ class KeystoneInstallTiger(KeystoneInstall):
                                                    self._KeystoneAgentPath()])
           if not ignore_failure and result != 0:
             raise Error(self.package, self.root,
-                        'Failed to start system agent for uid %d (%d): %s' %
-                        (self.agent_job_uid, result, errout))
+                        'Failed to start system agent for uid {0:d} ({1:d}): {2!s}'.format(self.agent_job_uid, result, errout))
         else:
           (result, out, errout) = self.RunCommand(['/usr/bin/open',
                                                    self._KeystoneAgentPath()])
           if not ignore_failure and result != 0:
             raise Error(self.package, self.root,
-                        'Failed to start user agent (%d): %s' %
-                        (result, errout))
+                        'Failed to start user agent ({0:d}): {1!s}'.format(result, errout))
       # Stop
       else:
         if self.is_system:
@@ -965,7 +956,7 @@ class KeystoneInstallTiger(KeystoneInstall):
         if (not ignore_failure and result != 0 and
             out.find('No matching processes') == -1):
           raise Error(self.package, self.root,
-                      'Failed to kill agent (%d): %s' % (result, errout))
+                      'Failed to kill agent ({0:d}): {1!s}'.format(result, errout))
     finally:
       if self.is_system:
         self._ClearSystemInstallPermissions()
